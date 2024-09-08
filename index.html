@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Interactive Image with Continuous Zoom and Timer</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        
+        html, body {height: 100%;margin: 0;}
+        .container {background-image: url('files/back.jpeg'); background-size: cover;background-position: center;height: 100%;display: flex;
+            justify-content: center;align-items: center;position: relative;}
+        
+        #action-button:hover {background-color: darkorange;}
+        .button-active {background-color: red !important;}
+        
+        @keyframes zoomInOut {0% { transform: scale(1); }50% { transform: scale(1.2); }100% { transform: scale(1); }}
+        .zooming {animation: zoomInOut 2s infinite;}
+        @media (max-width: 768px) {
+            #wave-image {width: 90vw; height: 90vw;}
+            #center-image {width: 70vw;height: auto;}
+            #action-button {width: 100px;height: 40px;font-size: 14px;line-height: 40px;}
+            #timer {font-size: 16px;padding: 5px 10px;}
+            #time-select {font-size: 12px;bottom: 70px;}
+        }
+        #center-image {width: 90vw;height: 60vh;transition: transform 0.3s ease;position: relative;z-index: 2;}
+        #wave-image {position: absolute;width: 100vw;height: 65vh;top: 50%;left: 50%;transform: translate(-50%, -50%);z-index: 1;
+            display: none;opacity: 0.8;pointer-events: none;}
+        #timer {position: absolute;top: 40px;right: 30px;font-size: 18px;font-weight: bold;color: rgb(0, 0, 0);background-color: rgba(255, 255, 255, 0.8);
+            padding: 8px 16px;border-radius: 8px;display: none;z-index: 3;}
+        #action-button {display: flex;justify-content: center;align-items: center;position: absolute;bottom: 85px;left: 50%;transform: translateX(-50%);
+            background-color: orange;color: white;border: 5px solid white;border-radius: 30px;font-size: 20px;cursor: pointer;width: 40%;height: 8%;font-weight: bolder;z-index: 3;padding: 10;}
+            #time-select {position: absolute;bottom: 8%;left: 18%;transform: translateX(-10%);padding: 5px;border-radius: 8px;border: none;font-size: 14px;z-index: 3;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content text-center">
+            <img id="wave-image" src="files/wave1.png" alt="Wave Image"> 
+            <img id="center-image" src="files/tool.png" alt="Center Image"> 
+        </div>
+        <div id="timer">
+            <img id="timer-image" src="files/timer.png" alt="Timer Image" style="width: 30px; height: 30px; margin-right: 3px;">
+            <span id="timer-text">00:00</span>
+        </div>
+        <label for="time-select" style="position: absolute; bottom: 9%; left: 3%; transform: translateX(-10%); font-size: 12px; font-weight: bolder; z-index: 3;color: white; "!important>
+            Paly after</label>
+        <button id="action-button" class="btn">Play</button>
+        <select id="time-select">
+            <option value="0">0 S</option>
+            <option value="3000">3 S</option>
+            <option value="5000">5 S</option>
+            <option value="10000">10 S</option>
+        </select>
+    </div>
+    <audio id="audio" src="files/sound1.mp3"></audio> 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+       const actionButton = document.getElementById('action-button');
+       const centerImage = document.getElementById('center-image');
+       const waveImage = document.getElementById('wave-image');
+       const audio = document.getElementById('audio');
+       const timeSelect = document.getElementById('time-select');
+       const timerDisplay = document.getElementById('timer');
+       const timerText = document.getElementById('timer-text'); 
+       let isZooming = false;
+       let zoomTimeout;
+       let countdownInterval; 
+       let isTimerRunning = false; 
+
+
+     function toggleZoom() {
+      if (isZooming) {
+        centerImage.classList.remove('zooming');
+        audio.pause();
+        audio.currentTime = 0;
+        waveImage.style.display = 'none';
+        actionButton.textContent = 'Play';
+        actionButton.style.backgroundColor= 'orange';
+        actionButton.classList.remove('button-active');
+        timerDisplay.style.display = 'none'; 
+        clearInterval(countdownInterval); 
+    } else {
+        centerImage.classList.add('zooming');
+        audio.play();
+        waveImage.style.display = 'block';
+        actionButton.textContent = 'Stop'; 
+        actionButton.classList.add('button-active');
+    }
+    isZooming = !isZooming;
+  }
+   function startCountdown(seconds) {
+     let timeRemaining = seconds;
+    timerDisplay.style.display = 'block'; 
+    timerText.textContent = `00:${timeRemaining.toString().padStart(2, '0')}`; 
+    countdownInterval = setInterval(() => {
+        timeRemaining--;
+        timerText.textContent = `00:${timeRemaining.toString().padStart(2, '0')}`; 
+        if (timeRemaining <= 0) {
+            clearInterval(countdownInterval); 
+            isTimerRunning = false; 
+            actionButton.textContent = 'Play'; 
+            timerDisplay.style.display = 'none'; 
+        }
+    }, 1000);
+}
+actionButton.addEventListener('click', () => {
+    clearTimeout(zoomTimeout); 
+    if (isZooming) {
+        toggleZoom();
+        clearInterval(countdownInterval); 
+        timerDisplay.style.display = 'none'; 
+        isTimerRunning = false; 
+        actionButton.textContent = 'Play'; 
+    } else if (isTimerRunning) {
+        clearInterval(countdownInterval); 
+        clearTimeout(zoomTimeout); 
+        timerDisplay.style.display = 'none'; 
+        actionButton.textContent = 'Play';
+        actionButton.style.backgroundColor='orange';
+        isTimerRunning = false; 
+    } else {
+        const selectedTime = parseInt(timeSelect.value) / 1000; 
+        if (selectedTime === 0) {
+            toggleZoom();
+            } else {
+            startCountdown(selectedTime); 
+            isTimerRunning = true; 
+            actionButton.textContent = 'Cancel'; 
+            actionButton.style.backgroundColor='red';
+            zoomTimeout = setTimeout(() => {
+            toggleZoom(); 
+            }, selectedTime * 1000);
+        }
+    }
+});
+audio.addEventListener('ended', () => {
+    actionButton.textContent = 'Play'; 
+    isZooming = false; 
+    centerImage.classList.remove('zooming');
+    waveImage.style.display = 'none';
+});
+</script>
+</body>
+</html>
